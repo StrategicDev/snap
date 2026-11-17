@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSG SNAP Store Reviewer — Onboarding Tracker & Reference</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        .tab-active {
+            border-bottom: 2px solid #0f172a;
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .tab-inactive {
+            border-bottom: 2px solid transparent;
+            color: #64748b;
+        }
+        .tab-inactive:hover {
+            color: #334155;
+        }
+        /* Custom Checkbox Styling */
+        .task-checkbox:checked + div .task-title {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
+        .task-checkbox:checked + div .task-desc {
+            color: #cbd5e1;
+        }
+        /* Print Styles */
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: #ffffff; }
+            .print-full { width: 100% !important; max-width: 100% !important; }
+            .shadow-sm, .shadow-md { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-emerald-100 selection:text-emerald-900">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Top Executive Header -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <!-- Brand & Title -->
+                <div class="flex items-center gap-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center shrink-0">
+                        <span class="font-extrabold text-emerald-400 tracking-tight text-lg">MG</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-400">Manhattan Strategy Group</span>
+                            <span class="text-slate-600">•</span>
+                            <span class="text-[11px] font-medium text-slate-400">Rev. 8.20.2026</span>
+                        </div>
+                        <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">SNAP Store Reviewer Onboarding Tracker</h1>
+                    </div>
+                </div>
+
+                <!-- Onboarding Date Picker & Global Progress -->
+                <div class="flex flex-wrap items-center gap-3 sm:gap-5 bg-slate-800/80 border border-slate-700/80 rounded-xl px-4 py-2.5">
+                    <div>
+                        <label for="onboarding-date" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
+                            Onboarding Date (Day 1)
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input type="date" id="onboarding-date" 
+                                class="bg-slate-900 border border-slate-600 text-white text-sm rounded-lg px-2.5 py-1 focus:outline-none focus:border-emerald-400 transition">
+                            <button onclick="setTodayAsOnboarding()" class="text-xs text-emerald-400 hover:text-emerald-300 font-medium underline underline-offset-2 no-print" title="Set to Today">
+                                Today
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="h-8 w-px bg-slate-700 hidden sm:block"></div>
+
+                    <div class="flex-1 sm:w-44 min-w-[140px]">
+                        <div class="flex justify-between items-center text-xs mb-1">
+                            <span class="text-slate-300 font-medium">Progress</span>
+                            <span id="progress-text" class="font-bold text-emerald-400">0% (0/17)</span>
+                        </div>
+                        <div class="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+                            <div id="progress-bar" class="bg-emerald-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="window.print()" class="no-print p-2 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white transition" title="Print Checklist">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex items-center gap-6 mt-4 -mb-4 overflow-x-auto no-print text-sm">
+                <button onclick="switchTab('all')" id="tab-all" class="tab-active pb-3 whitespace-nowrap flex items-center gap-1.5 transition">
+                    <i data-lucide="check-square" class="w-4 h-4"></i> All Tasks
+                </button>
+                <button onclick="switchTab('pending')" id="tab-pending" class="tab-inactive pb-3 whitespace-nowrap flex items-center gap-1.5 transition">
+                    <i data-lucide="circle-dot" class="w-4 h-4"></i> Pending Only
+                    <span id="pending-badge" class="ml-1 px-1.5 py-0.5 text-[11px] rounded-full bg-slate-700 text-slate-200">17</span>
+                </button>
+                <button onclick="switchTab('deadlines')" id="tab-deadlines" class="tab-inactive pb-3 whitespace-nowrap flex items-center gap-1.5 transition">
+                    <i data-lucide="calendar-clock" class="w-4 h-4"></i> Deadlines & Rules
+                </button>
+                <button onclick="switchTab('timelog')" id="tab-timelog" class="tab-inactive pb-3 whitespace-nowrap flex items-center gap-1.5 transition">
+                    <i data-lucide="clock" class="w-4 h-4"></i> Unanet Time Log
+                    <span id="hours-badge" class="ml-1 px-1.5 py-0.5 text-[11px] rounded-full bg-emerald-500/20 text-emerald-300 font-semibold">0.0h</span>
+                </button>
+                <button onclick="switchTab('contacts')" id="tab-contacts" class="tab-inactive pb-3 whitespace-nowrap flex items-center gap-1.5 transition">
+                    <i data-lucide="users" class="w-4 h-4"></i> Contacts & Links
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Dynamic Deadline Timeline Strip -->
+    <section class="bg-white border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                    <i data-lucide="calendar-days" class="w-3.5 h-3.5 text-slate-700"></i>
+                    Calculated Target Milestones
+                </span>
+                <span id="date-helper-hint" class="text-xs text-slate-500">Select your Onboarding Date above to calculate exact calendar deadlines</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5" id="milestone-strip">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- LEFT COLUMN: Main Active View (8 cols on desktop) -->
+            <div class="lg:col-span-8 space-y-6 print-full" id="main-content-area">
+
+                <!-- VIEW: CHECKLIST (Used for 'all' and 'pending' tabs) -->
+                <div id="view-checklist" class="space-y-6">
+                    <!-- Spam Folder Reminder Banner -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-3">
+                        <i data-lucide="mail-warning" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+                        <div class="text-sm text-amber-900">
+                            <span class="font-semibold">Check Spam/Junk Folders Daily:</span> Onboarding emails arrive across both your <span class="font-medium">personal email</span> (Paylocity, MSG setup, Project Tutorials) and your new <span class="font-medium">MSG email</span> (Unanet credentials, future communications).
+                        </div>
+                    </div>
+
+                    <!-- Phase Containers injected here -->
+                    <div id="phases-container" class="space-y-6"></div>
+
+                    <!-- Reset Controls -->
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-200 text-xs text-slate-500 no-print">
+                        <span>All progress, notes, and hours save automatically in your browser.</span>
+                        <button onclick="confirmReset()" class="text-rose-600 hover:text-rose-700 font-medium hover:underline">
+                            Reset All Progress
+                        </button>
+                    </div>
+                </div>
+
+                <!-- VIEW: DEADLINES & RULES -->
+                <div id="view-deadlines" class="hidden space-y-6">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="bg-slate-900 px-5 py-4 text-white">
+                            <h2 class="text-base font-bold flex items-center gap-2">
+                                <i data-lucide="shield-alert" class="w-5 h-5 text-emerald-400"></i>
+                                Mandatory Deadlines, Thresholds & Policies
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Critical rules extracted from the MSG SNAP Onboarding Checklist</p>
+                        </div>
+                        <div class="divide-y divide-slate-100">
+                            <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <span class="inline-block px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded bg-blue-50 text-blue-700 mb-1">Within 48 Hours of Day 1</span>
+                                    <h3 class="font-bold text-slate-900">Submit ID Badge Photo via MSG Email</h3>
+                                    <p class="text-sm text-slate-600 mt-0.5">Must be sent <strong>from your MSG email</strong> (not personal email) to <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded font-mono">snaprecruiting@manhattanstrategy.com</code>.</p>
+                                </div>
+                                <div id="rule-date-48h" class="text-sm font-bold text-slate-800 bg-slate-100 px-3 py-2 rounded-lg shrink-0 text-center">
+                                    Set Day 1 Date
+                                </div>
+                            </div>
+
+                            <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <span class="inline-block px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded bg-amber-50 text-amber-700 mb-1">Business Day 4 Escalation</span>
+                                    <h3 class="font-bold text-slate-900">Unanet Credentials Escalation Deadline</h3>
+                                    <p class="text-sm text-slate-600 mt-0.5">If you have not received Unanet credentials from Wendy Hudson by <strong>4 business days</strong> after onboarding, contact Karen Gray immediately at <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded font-mono">snaprecruiting@manhattanstrategy.com</code>.</p>
+                                </div>
+                                <div id="rule-date-b4" class="text-sm font-bold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg shrink-0 text-center">
+                                    Set Day 1 Date
+                                </div>
+                            </div>
+
+                            <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <span class="inline-block px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded bg-indigo-50 text-indigo-700 mb-1">Business Days 4–6</span>
+                                    <h3 class="font-bold text-slate-900">Mandatory Unanet Screen-Share Meeting</h3>
+                                    <p class="text-sm text-slate-600 mt-0.5">Schedule with supervisor 4–6 business days post-onboarding. <strong>Do NOT attend until you can log into Unanet.</strong> Must join from a <strong>computer</strong> (not phone) to share screen and log hours.</p>
+                                </div>
+                                <div id="rule-date-b46" class="text-sm font-bold text-indigo-800 bg-indigo-50 border border-indigo-200 px-3 py-2 rounded-lg shrink-0 text-center">
+                                    Set Day 1 Date
+                                </div>
+                            </div>
+
+                            <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <span class="inline-block px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded bg-emerald-50 text-emerald-700 mb-1">Within 7 Calendar Days</span>
+                                    <h3 class="font-bold text-slate-900">Knowledge Assessment (82% Minimum Score)</h3>
+                                    <p class="text-sm text-slate-600 mt-0.5">Open-book assessment linked in the <em>"MSG SNAP Store Visit Project Tutorials"</em> email. Passing score is <strong>82%</strong>. If you score below 82%, you must contact a team member.</p>
+                                </div>
+                                <div id="rule-date-7d" class="text-sm font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-lg shrink-0 text-center">
+                                    Set Day 1 Date
+                                </div>
+                            </div>
+
+                            <div class="p-5">
+                                <span class="inline-block px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded bg-slate-100 text-slate-700 mb-1">Ongoing Field Policy</span>
+                                <h3 class="font-bold text-slate-900">Availability & Time-Off Notice Rule</h3>
+                                <p class="text-sm text-slate-600 mt-0.5">If you will be unavailable to accept store visit assignments for <strong>more than three (3) consecutive days</strong>, you must notify the project team by email at least <strong>seven (7) days in advance</strong>.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step Numbering Reconciliation Note -->
+                    <div class="bg-slate-100 border border-slate-200 rounded-xl p-4 text-xs text-slate-600">
+                        <p class="font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                            <i data-lucide="info" class="w-4 h-4 text-slate-600"></i>
+                            Note on PDF Text vs. Circular Diagram Numbering (Steps 10–12)
+                        </p>
+                        <p>In the original MSG checklist PDF, the circular diagram lists <strong>Step 10: SNAP Final Review</strong>, <strong>Step 11: Salesforce Access</strong>, and <strong>Step 12: ID Badges</strong>, whereas the written text combines Final Review and lists Salesforce as Step 10 and ID Badges / 1st Store Visit Prep Video as Step 11. This tracker unifies both in Phase 4 so no requirement is missed.</p>
+                    </div>
+                </div>
+
+                <!-- VIEW: UNANET TIME LOG -->
+                <div id="view-timelog" class="hidden space-y-6">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="bg-slate-900 px-5 py-4 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <h2 class="text-base font-bold flex items-center gap-2">
+                                    <i data-lucide="clock" class="w-5 h-5 text-emerald-400"></i>
+                                    Step 9 Prep: Onboarding & Training Hours Log
+                                </h2>
+                                <p class="text-xs text-slate-400 mt-0.5">Track dates & hours worked to enter live during your Unanet screen-share meeting</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 px-3 py-1.5 rounded-lg text-sm font-bold">
+                                    Total: <span id="timelog-total-display">0.00</span> hrs
+                                </span>
+                                <button onclick="copyTimeLogSummary()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Summary
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Add Entry Form -->
+                        <form id="timelog-form" onsubmit="addTimeEntry(event)" class="p-5 bg-slate-50 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                            <div class="sm:col-span-3">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Date</label>
+                                <input type="date" id="log-date" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-900">
+                            </div>
+                            <div class="sm:col-span-4">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Activity Type</label>
+                                <select id="log-activity" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-900">
+                                    <option value="Onboarding Meeting">Onboarding Meeting</option>
+                                    <option value="Certification Videos">Certification Videos & SOPs</option>
+                                    <option value="Knowledge Assessment">Knowledge Assessment</option>
+                                    <option value="Unanet Training Meeting">Unanet Training Meeting</option>
+                                    <option value="HR / Portal Setup">HR / Portal Setup</option>
+                                    <option value="Other">Other Onboarding Task</option>
+                                </select>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Hours</label>
+                                <input type="number" id="log-hours" step="0.25" min="0.25" max="24" placeholder="1.5" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-slate-900">
+                            </div>
+                            <div class="sm:col-span-3">
+                                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm py-2 px-4 rounded-lg flex items-center justify-center gap-1.5 transition">
+                                    <i data-lucide="plus" class="w-4 h-4"></i> Add Hours
+                                </button>
+                            </div>
+                            <div class="sm:col-span-12">
+                                <input type="text" id="log-notes" placeholder="Optional notes (e.g., Watched Modules 1–4, completed I-9 verification)..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-slate-900">
+                            </div>
+                        </form>
+
+                        <!-- Logged Entries Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-white">
+                                        <th class="py-3 px-4">Date</th>
+                                        <th class="py-3 px-4">Activity</th>
+                                        <th class="py-3 px-4">Notes</th>
+                                        <th class="py-3 px-4 text-right">Hours</th>
+                                        <th class="py-3 px-4 text-right w-12"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="timelog-tbody" class="divide-y divide-slate-100 text-sm">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: CONTACTS & LINKS (Full tab view on mobile/desktop) -->
+                <div id="view-contacts" class="hidden space-y-6">
+                    <!-- Portal Launchpad Vault -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                        <div class="flex items-start justify-between gap-4 mb-4">
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <i data-lucide="bookmark" class="w-5 h-5 text-emerald-600"></i>
+                                    Personal Onboarding Portal Launchpad
+                                </h2>
+                                <p class="text-xs text-slate-500 mt-0.5">
+                                    The PDF displays link labels without raw URLs. Paste the links from your welcome emails below to turn this into your one-click launchpad.
+                                </p>
+                            </div>
+                        </div>
+                        <div id="portal-links-full" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Routing Directory -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50">
+                            <h2 class="text-base font-bold text-slate-900">Issue-Based Support Routing Directory</h2>
+                            <p class="text-xs text-slate-500">Contact the exact specialist responsible for each onboarding system</p>
+                        </div>
+                        <div id="contacts-full-list" class="divide-y divide-slate-100">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT SIDEBAR: Persistent Quick Reference (4 cols on desktop) -->
+            <aside class="lg:col-span-4 space-y-6 no-print">
+
+                <!-- Quick Portal Launchpad Card -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                            <i data-lucide="external-link" class="w-3.5 h-3.5 text-emerald-600"></i>
+                            My Saved Portal Links
+                        </h3>
+                        <button onclick="switchTab('contacts')" class="text-[11px] font-semibold text-emerald-700 hover:underline">Edit URLs</button>
+                    </div>
+                    <div id="sidebar-portal-links" class="space-y-2">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Phone Support & Key Thresholds Card -->
+                <div class="bg-slate-900 text-white rounded-2xl p-4 shadow-sm space-y-3.5">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Live Phone Support</span>
+                            <div class="text-lg font-extrabold tracking-tight mt-0.5">877-674-7627</div>
+                            <p class="text-xs text-slate-400">Dial <strong class="text-white">Extension 1</strong> & hold until connected</p>
+                        </div>
+                        <button onclick="copyText('877-674-7627', 'Phone number')" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 transition" title="Copy Phone Number">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5 text-xs">
+                        <div class="bg-slate-800/80 rounded-xl p-2.5 border border-slate-700/70">
+                            <span class="text-slate-400 block text-[11px]">Quiz Passing Score</span>
+                            <span class="text-base font-extrabold text-emerald-400">82% Min</span>
+                            <span class="text-[10px] text-slate-400 block">Open-book (7 days)</span>
+                        </div>
+                        <div class="bg-slate-800/80 rounded-xl p-2.5 border border-slate-700/70">
+                            <span class="text-slate-400 block text-[11px]">Time-Off Notice</span>
+                            <span class="text-base font-extrabold text-amber-400">7 Days Prior</span>
+                            <span class="text-[10px] text-slate-400 block">If away &gt;3 days</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Who to Contact Routing Card -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3 flex items-center gap-1.5">
+                        <i data-lucide="life-buoy" class="w-3.5 h-3.5 text-slate-700"></i>
+                        Who to Contact
+                    </h3>
+                    <div id="sidebar-routing-list" class="space-y-2.5">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Mini Time Log Summary Card -->
+                <div class="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                            <i data-lucide="timer" class="w-3.5 h-3.5 text-emerald-700"></i>
+                            Unanet Hours Ready
+                        </h3>
+                        <span id="sidebar-hours-total" class="text-sm font-extrabold text-emerald-800">0.00 hrs</span>
+                    </div>
+                    <p class="text-xs text-emerald-800/80 mb-3">
+                        Log onboarding meetings, SOP videos, and quiz time before your Day 4–6 Unanet screen-share.
+                    </p>
+                    <button onclick="switchTab('timelog')" class="w-full py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Open Training Time Log
+                    </button>
+                </div>
+
+            </aside>
+        </div>
+    </main>
+
+    <!-- Custom Modal for Reset Confirmation -->
+    <div id="reset-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900">Reset All Onboarding Data?</h3>
+            <p class="text-sm text-slate-600 mt-1.5">This will clear all checked tasks, your saved portal links, and your Unanet training hours log. This cannot be undone.</p>
+            <div class="flex justify-end gap-2.5 mt-5">
+                <button onclick="closeResetModal()" class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">Cancel</button>
+                <button onclick="executeReset()" class="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition">Yes, Reset Everything</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // DATA DEFINITIONS (From MSG SNAP PDF)
+        // ==========================================
+
+        const PHASES = [
+            {
+                id: 'phase-1',
+                badge: 'Phase 1 • Pre-Onboarding & Day 1',
+                title: 'Pre-Hire Milestones & Onboarding Meeting (Steps 1–5)',
+                subtitle: 'Steps 1–5 occur on or before Day 1 (your onboarding date).',
+                colorClass: 'border-l-4 border-l-slate-600',
+                badgeClass: 'bg-slate-100 text-slate-700',
+                tasks: [
+                    {
+                        id: 't-step1-5',
+                        stepTag: 'Steps 1–5',
+                        title: 'Verify Pre-Onboarding Milestones & Attend Day 1 Onboarding Meeting',
+                        desc: 'Confirm completion of: (1) Test Photos, (2) Interviews, (3) Offer Letter, (4) HireRight Background Check, and (5) Day 1 Onboarding Meeting.',
+                        deadlineType: 'day1',
+                        meta: 'On or before Day 1'
+                    }
+                ]
+            },
+            {
+                id: 'phase-2',
+                badge: 'Phase 2 • Day 1 Core Setup',
+                title: 'Paylocity HR & MSG Email Setup (Steps 6–7)',
+                subtitle: 'Complete HR verification on Day 1 and submit your ID badge photo within 48 hours.',
+                colorClass: 'border-l-4 border-l-blue-600',
+                badgeClass: 'bg-blue-50 text-blue-700',
+                tasks: [
+                    {
+                        id: 't-step6-login',
+                        stepTag: 'Step 6A',
+                        title: 'Log into Paylocity & Bookmark Portal',
+                        desc: 'Check personal email for Paylocity login credentials. Save the Paylocity link to your favorites and store your username/password securely for future paystubs.',
+                        deadlineType: 'day1',
+                        support: { name: 'Yvette Castillo', email: 'ycastillo@manhattanstrategy.com', role: 'Paylocity Login' }
+                    },
+                    {
+                        id: 't-step6-paperwork',
+                        stepTag: 'Step 6B',
+                        title: 'Complete All Paylocity HR Paperwork (Direct Deposit & Tax Forms)',
+                        desc: 'Submit all required onboarding tax forms and direct deposit details inside Paylocity.',
+                        deadlineType: 'day1'
+                    },
+                    {
+                        id: 't-step6-i9',
+                        stepTag: 'Step 6C',
+                        title: 'Complete I-9 Document Verification with HR on Day 1',
+                        desc: 'Required on your onboarding day. Note: HR approval of your I-9 and Paylocity paperwork triggers your Unanet credentials in Step 9.',
+                        deadlineType: 'day1',
+                        highlight: 'Unlocks Step 9 Unanet Access'
+                    },
+                    {
+                        id: 't-step7-msg-setup',
+                        stepTag: 'Step 7A',
+                        title: 'Set Up MSG Email, Microsoft Authenticator (2FA) & Outlook Web Access',
+                        desc: 'Look for setup instructions and a separate password email. Install Microsoft Authenticator on your phone for 2FA, sign in via Outlook Web Access (OWA), and save credentials securely.',
+                        deadlineType: 'day1',
+                        support: { name: 'Markee Caraway', email: 'mcaraway@manhattanstrategy.com', role: 'MSG Email / 2FA' }
+                    },
+                    {
+                        id: 't-step7-outlook-app',
+                        stepTag: 'Step 7B',
+                        title: '(Recommended) Install Outlook Mobile App & Enable Notifications',
+                        desc: 'All future MSG communications go exclusively to your MSG email. Check it daily or turn on push notifications.',
+                        links: [
+                            { label: 'Apple App Store (iOS)', url: 'https://apps.apple.com/us/app/microsoft-outlook/id951937596' },
+                            { label: 'Android / Microsoft 365 Mobile', url: 'https://www.microsoft.com/en-us/microsoft-365/outlook-mobile-for-android-and-ios' }
+                        ]
+                    },
+                    {
+                        id: 't-step7-badge-photo',
+                        stepTag: 'Step 7C',
+                        title: 'Send ID Badge Photo FROM Your MSG Email (Within 48 Hours)',
+                        desc: 'Using your new MSG email account, send your photo to snaprecruiting@manhattanstrategy.com within 48 hours of your onboarding date.',
+                        deadlineType: '48h',
+                        highlight: 'Strict 48-Hour Deadline • Must send from MSG Email',
+                        quickCopyEmail: 'snaprecruiting@manhattanstrategy.com'
+                    }
+                ]
+            },
+            {
+                id: 'phase-3',
+                badge: 'Phase 3 • Training, Quiz & Unanet',
+                title: 'Certification Assessment & Unanet Timesheets (Steps 8–9)',
+                subtitle: 'Pass the open-book quiz (82% min) within 7 days and complete your Unanet screen-share setup.',
+                colorClass: 'border-l-4 border-l-emerald-600',
+                badgeClass: 'bg-emerald-50 text-emerald-700',
+                tasks: [
+                    {
+                        id: 't-step8-tutorials',
+                        stepTag: 'Step 8A',
+                        title: 'Review SOPs & Project Tutorials in Personal Email',
+                        desc: 'Locate the email in your personal inbox titled "MSG SNAP Store Visit Project Tutorials" containing links to SOPs (client specs), tutorials, and the knowledge assessment.',
+                        deadlineType: 'day1'
+                    },
+                    {
+                        id: 't-step8-quiz',
+                        stepTag: 'Step 8B',
+                        title: 'Complete Open-Book Knowledge Assessment (82% Passing Score)',
+                        desc: 'Must be completed within 7 calendar days of onboarding. You must score at least 82%. If you score below 82%, you must contact a team member.',
+                        deadlineType: '7d',
+                        highlight: '7-Day Deadline • 82% Minimum Passing Score'
+                    },
+                    {
+                        id: 't-step9-creds',
+                        stepTag: 'Step 9A',
+                        title: 'Receive Unanet Credentials in MSG Email (Escalate if Missing on Day 4)',
+                        desc: 'After HR approves your I-9 and Paylocity paperwork, Wendy Hudson will email Unanet credentials to your MSG email. If you still lack access 4 business days after onboarding, contact Karen Gray immediately at snaprecruiting@manhattanstrategy.com.',
+                        deadlineType: 'b4',
+                        highlight: 'Escalate on Business Day 4 if No Access',
+                        support: { name: 'Wendy Hudson', email: 'whudson@manhattanstrategy.com', role: 'Unanet Login' },
+                        quickCopyEmail: 'snaprecruiting@manhattanstrategy.com'
+                    },
+                    {
+                        id: 't-step9-schedule',
+                        stepTag: 'Step 9B',
+                        title: 'Schedule Unanet Meeting with Supervisor (4–6 Business Days Post-Onboarding)',
+                        desc: 'Use the Unanet Meeting Link to schedule 4–6 business days after Day 1. IMPORTANT: Do NOT attend the meeting until you can successfully log in to your Unanet portal.',
+                        deadlineType: 'b4_6',
+                        highlight: 'Do NOT attend until Unanet login works'
+                    },
+                    {
+                        id: 't-step9-meeting',
+                        stepTag: 'Step 9C',
+                        title: 'Attend Unanet Screen-Share Meeting on a Computer & Enter Hours',
+                        desc: 'Joining on a computer is mandatory (not optional). You will share your screen and input all daily hours worked since onboarding (meetings, certification videos, and knowledge assessment).',
+                        deadlineType: 'b4_6',
+                        actionButton: { label: 'Open Time Log Helper', tab: 'timelog' }
+                    }
+                ]
+            },
+            {
+                id: 'phase-4',
+                badge: 'Phase 4 • Final Review, Portals & First Visit',
+                title: 'Final Review, Salesforce Activation & First Store Visit Prep (Steps 10–12)',
+                subtitle: 'Unified steps from the checklist text and onboarding cycle diagram.',
+                colorClass: 'border-l-4 border-l-purple-600',
+                badgeClass: 'bg-purple-50 text-purple-700',
+                tasks: [
+                    {
+                        id: 't-step10-review',
+                        stepTag: 'Step 10',
+                        title: 'Complete SNAP Final Review',
+                        desc: 'Ensure all HR forms, ID badge photo, 82%+ quiz score, and Unanet setup are verified for final onboarding clearance.'
+                    },
+                    {
+                        id: 't-step11-salesforce',
+                        stepTag: 'Step 11',
+                        title: 'Activate Salesforce Portal',
+                        desc: 'Watch for an email with your Salesforce credentials and complete your Salesforce portal activation.'
+                    },
+                    {
+                        id: 't-step12-badge-video',
+                        stepTag: 'Step 12',
+                        title: 'Receive ID Badge & Watch 15-Minute First Store Visit Prep Video',
+                        desc: 'When you receive your 1st store visit assignment email, watch the mandatory 15-minute preparation video linked inside that email before conducting your visit.',
+                        highlight: 'Watch 15-min prep video in 1st assignment email'
+                    }
+                ]
+            }
+        ];
+
+        const CONTACTS_ROUTING = [
+            {
+                issue: 'Recruiting, Badge Photo & Day-4 Unanet Escalation',
+                name: 'SNAP Recruiting / Karen Gray',
+                email: 'snaprecruiting@manhattanstrategy.com',
+                altEmail: 'kgray@manhattanstrategy.com',
+                badge: 'Primary Hub',
+                badgeColor: 'bg-emerald-100 text-emerald-800'
+            },
+            {
+                issue: 'Paylocity Login & HR Paperwork Issues',
+                name: 'Yvette Castillo',
+                email: 'ycastillo@manhattanstrategy.com',
+                badge: 'Paylocity / HR',
+                badgeColor: 'bg-blue-100 text-blue-800'
+            },
+            {
+                issue: 'MSG Email & Microsoft Authenticator Issues',
+                name: 'Markee Caraway',
+                email: 'mcaraway@manhattanstrategy.com',
+                badge: 'IT / Email',
+                badgeColor: 'bg-indigo-100 text-indigo-800'
+            },
+            {
+                issue: 'Unanet Portal & Login Issues',
+                name: 'Wendy Hudson',
+                email: 'whudson@manhattanstrategy.com',
+                badge: 'Unanet',
+                badgeColor: 'bg-amber-100 text-amber-800'
+            }
+        ];
+
+        const PROJECT_ROSTER = [
+            { name: 'William Wang', email: 'wwang@manhattanstrategy.com' },
+            { name: 'Melanie Steen', email: 'msteen@manhattanstrategy.com' },
+            { name: 'Maira Soriano', email: 'msoriano@manhattanstrategy.com' },
+            { name: 'Heather Sajdak', email: 'hsajdak@manhattanstrategy.com' },
+            { name: 'Karen Gray', email: 'kgray@manhattanstrategy.com' },
+            { name: 'Glenda Chain', email: 'gchain@manhattanstrategy.com' }
+        ];
+
+        const DEFAULT_PORTAL_LINKS = [
+            { id: 'link-paylocity', label: 'Paylocity Login', hint: 'From Step 6 welcome email', url: '' },
+            { id: 'link-owa', label: 'Outlook Web Access (OWA)', hint: 'From Step 7 MSG email setup', url: '' },
+            { id: 'link-auth', label: 'Microsoft Authenticator Setup', hint: 'From Step 7 2FA instructions', url: '' },
+            { id: 'link-unanet-meet', label: 'Unanet Meeting Scheduler', hint: 'From Step 9 supervisor link', url: '' },
+            { id: 'link-unanet-portal', label: 'Unanet Timesheet Portal', hint: 'From Wendy Hudson email', url: '' },
+            { id: 'link-salesforce', label: 'Salesforce Portal', hint: 'From Step 10/11 credentials email', url: '' }
+        ];
+
+        // ==========================================
+        // STATE MANAGEMENT (LocalStorage)
+        // ==========================================
+
+        const STORAGE_KEY = 'msg_snap_onboarding_v1';
+
+        let state = {
+            onboardingDate: '',
+            completedTasks: {},
+            timeLogs: [],
+            portalUrls: {},
+            activeTab: 'all'
+        };
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    state = { ...state, ...parsed };
+                }
+            } catch (e) {
+                console.error('Failed to load state:', e);
+            }
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.error('Failed to save state:', e);
+            }
+        }
+
+        // ==========================================
+        // DATE & BUSINESS DAY CALCULATIONS
+        // ==========================================
+
+        function parseLocalDate(dateStr) {
+            if (!dateStr) return null;
+            const [y, m, d] = dateStr.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        function addCalendarDays(dateObj, days) {
+            const res = new Date(dateObj);
+            res.setDate(res.getDate() + days);
+            return res;
+        }
+
+        function addBusinessDays(dateObj, bizDays) {
+            const res = new Date(dateObj);
+            let added = 0;
+            while (added < bizDays) {
+                res.setDate(res.getDate() + 1);
+                const dayOfWeek = res.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    added++;
+                }
+            }
+            return res;
+        }
+
+        function formatShortDate(dateObj) {
+            if (!dateObj) return '—';
+            return dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        }
+
+        function getCalculatedDeadlines() {
+            const d1 = parseLocalDate(state.onboardingDate);
+            if (!d1) return null;
+            return {
+                day1: formatShortDate(d1),
+                plus48h: formatShortDate(addCalendarDays(d1, 2)),
+                bizDay4: formatShortDate(addBusinessDays(d1, 4)),
+                bizDay6: formatShortDate(addBusinessDays(d1, 6)),
+                plus7d: formatShortDate(addCalendarDays(d1, 7))
+            };
+        }
+
+        // ==========================================
+        // RENDER FUNCTIONS
+        // ==========================================
+
+        function renderMilestones() {
+            const container = document.getElementById('milestone-strip');
+            const hint = document.getElementById('date-helper-hint');
+            const dates = getCalculatedDeadlines();
+
+            if (!dates) {
+                hint.textContent = 'Select your Onboarding Date above to calculate exact calendar deadlines';
+                hint.className = 'text-xs text-amber-600 font-medium';
+            } else {
+                hint.textContent = `Calculated from Day 1 (${dates.day1})`;
+                hint.className = 'text-xs text-emerald-700 font-semibold';
+            }
+
+            const cards = [
+                {
+                    label: '+48 Hours • Badge Photo',
+                    value: dates ? dates.plus48h : 'Day 1 + 2 Days',
+                    sub: 'Send from MSG Email',
+                    accent: 'border-blue-200 bg-blue-50/50 text-blue-900'
+                },
+                {
+                    label: 'Business Day 4 • Escalation',
+                    value: dates ? dates.bizDay4 : '4 Biz Days Post-Day 1',
+                    sub: 'If no Unanet credentials',
+                    accent: 'border-amber-200 bg-amber-50/50 text-amber-900'
+                },
+                {
+                    label: 'Biz Days 4–6 • Unanet Meet',
+                    value: dates ? `${dates.bizDay4} – ${dates.bizDay6}` : '4–6 Biz Days Post-Day 1',
+                    sub: 'Computer screen-share',
+                    accent: 'border-indigo-200 bg-indigo-50/50 text-indigo-900'
+                },
+                {
+                    label: '+7 Days • Quiz Deadline',
+                    value: dates ? dates.plus7d : 'Day 1 + 7 Days',
+                    sub: 'Min 82% score (open-book)',
+                    accent: 'border-emerald-200 bg-emerald-50/50 text-emerald-900'
+                }
+            ];
+
+            container.innerHTML = cards.map(c => `
+                <div class="rounded-xl border ${c.accent} px-3.5 py-2.5 flex flex-col justify-between">
+                    <span class="text-[11px] font-bold uppercase tracking-wider opacity-75">${c.label}</span>
+                    <div class="text-sm font-extrabold mt-0.5">${c.value}</div>
+                    <span class="text-[11px] opacity-80 mt-0.5">${c.sub}</span>
+                </div>
+            `).join('');
+
+            // Update Deadlines & Rules Tab Dates
+            document.getElementById('rule-date-48h').textContent = dates ? `Due: ${dates.plus48h}` : 'Set Day 1 Date';
+            document.getElementById('rule-date-b4').textContent = dates ? `Date: ${dates.bizDay4}` : 'Set Day 1 Date';
+            document.getElementById('rule-date-b46').textContent = dates ? `${dates.bizDay4} – ${dates.bizDay6}` : 'Set Day 1 Date';
+            document.getElementById('rule-date-7d').textContent = dates ? `Due: ${dates.plus7d}` : 'Set Day 1 Date';
+        }
+
+        function getTaskDeadlineBadge(type, dates) {
+            if (!type) return '';
+            const map = {
+                'day1': { label: dates ? `Day 1 (${dates.day1})` : 'Day 1', cls: 'bg-slate-100 text-slate-700 border-slate-200' },
+                '48h': { label: dates ? `Due ${dates.plus48h} (48h)` : 'Within 48 Hours', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+                'b4': { label: dates ? `Escalate ${dates.bizDay4}` : 'Business Day 4', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
+                'b4_6': { label: dates ? `${dates.bizDay4} – ${dates.bizDay6}` : 'Business Days 4–6', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+                '7d': { label: dates ? `Due ${dates.plus7d} (7d)` : 'Within 7 Days', cls: 'bg-emerald-50 text-emerald-800 border-emerald-200' }
+            };
+            const item = map[type];
+            if (!item) return '';
+            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${item.cls}">
+                        <i data-lucide="calendar" class="w-3 h-3"></i> ${item.label}
+                    </span>`;
+        }
+
+        function renderChecklist() {
+            const container = document.getElementById('phases-container');
+            const dates = getCalculatedDeadlines();
+            const showPendingOnly = state.activeTab === 'pending';
+
+            let totalTasks = 0;
+            let completedCount = 0;
+
+            PHASES.forEach(p => {
+                p.tasks.forEach(t => {
+                    totalTasks++;
+                    if (state.completedTasks[t.id]) completedCount++;
+                });
+            });
+
+            // Update Progress Bar & Badges
+            const pct = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+            document.getElementById('progress-text').textContent = `${pct}% (${completedCount}/${totalTasks})`;
+            document.getElementById('pending-badge').textContent = totalTasks - completedCount;
+
+            if (showPendingOnly && completedCount === totalTasks) {
+                container.innerHTML = `
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 text-center">
+                        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-emerald-950">All Onboarding Tasks Completed!</h3>
+                        <p class="text-sm text-emerald-800 mt-1">You have checked off all ${totalTasks} items across Phases 1–4.</p>
+                        <button onclick="switchTab('all')" class="mt-4 px-4 py-2 bg-emerald-700 text-white text-xs font-semibold rounded-lg hover:bg-emerald-800 transition">
+                            View All Completed Tasks
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = PHASES.map(phase => {
+                const visibleTasks = showPendingOnly
+                    ? phase.tasks.filter(t => !state.completedTasks[t.id])
+                    : phase.tasks;
+
+                if (visibleTasks.length === 0) return '';
+
+                const phaseDoneCount = phase.tasks.filter(t => state.completedTasks[t.id]).length;
+
+                return `
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden ${phase.colorClass}">
+                        <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/60">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${phase.badgeClass}">
+                                        ${phase.badge}
+                                    </span>
+                                    <span class="text-xs font-semibold text-slate-500">
+                                        ${phaseDoneCount}/${phase.tasks.length} done
+                                    </span>
+                                </div>
+                                <h2 class="text-base font-bold text-slate-900 mt-1.5">${phase.title}</h2>
+                                <p class="text-xs text-slate-500">${phase.subtitle}</p>
+                            </div>
+                        </div>
+
+                        <div class="divide-y divide-slate-100">
+                            ${visibleTasks.map(task => {
+                                const isChecked = !!state.completedTasks[task.id];
+                                return `
+                                    <div class="p-4 sm:px-5 hover:bg-slate-50/80 transition flex items-start gap-3.5">
+                                        <input type="checkbox" id="${task.id}" ${isChecked ? 'checked' : ''}
+                                            onchange="toggleTask('${task.id}')"
+                                            class="task-checkbox mt-1 w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer shrink-0">
+                                        
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex flex-wrap items-center gap-2 mb-1">
+                                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                                    ${task.stepTag}
+                                                </span>
+                                                ${getTaskDeadlineBadge(task.deadlineType, dates)}
+                                                ${task.highlight ? `
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                                        ${task.highlight}
+                                                    </span>
+                                                ` : ''}
+                                            </div>
+
+                                            <label for="${task.id}" class="task-title block text-sm font-bold text-slate-900 cursor-pointer select-none">
+                                                ${task.title}
+                                            </label>
+                                            <p class="task-desc text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
+                                                ${task.desc}
+                                            </p>
+
+                                            <!-- Extra Interactive Attachments (Links, Support Contacts, Actions) -->
+                                            <div class="flex flex-wrap items-center gap-2 mt-2.5 no-print">
+                                                ${task.links ? task.links.map(l => `
+                                                    <a href="${l.url}" target="_blank" rel="noopener noreferrer"
+                                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium transition">
+                                                        <i data-lucide="smartphone" class="w-3.5 h-3.5 text-slate-600"></i>
+                                                        ${l.label}
+                                                        <i data-lucide="external-link" class="w-3 h-3 text-slate-400"></i>
+                                                    </a>
+                                                `).join('') : ''}
+
+                                                ${task.quickCopyEmail ? `
+                                                    <button onclick="copyText('${task.quickCopyEmail}', 'Email address')"
+                                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-semibold transition">
+                                                        <i data-lucide="copy" class="w-3 h-3"></i>
+                                                        Copy ${task.quickCopyEmail}
+                                                    </button>
+                                                ` : ''}
+
+                                                ${task.support ? `
+                                                    <button onclick="copyText('${task.support.email}', '${task.support.name} email')"
+                                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs transition"
+                                                        title="Click to copy support email">
+                                                        <i data-lucide="help-circle" class="w-3.5 h-3.5 text-slate-500"></i>
+                                                        <span>${task.support.role} Support: <strong>${task.support.name}</strong></span>
+                                                        <i data-lucide="copy" class="w-3 h-3 text-slate-400"></i>
+                                                    </button>
+                                                ` : ''}
+
+                                                ${task.actionButton ? `
+                                                    <button onclick="switchTab('${task.actionButton.tab}')"
+                                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">
+                                                        <i data-lucide="clock" class="w-3.5 h-3.5 text-emerald-400"></i>
+                                                        ${task.actionButton.label}
+                                                    </button>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function renderContactsAndLinks() {
+            // 1. Sidebar Routing List
+            const sidebarRouting = document.getElementById('sidebar-routing-list');
+            sidebarRouting.innerHTML = CONTACTS_ROUTING.map(c => `
+                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-slate-300 transition">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${c.badgeColor}">${c.badge}</span>
+                        <button onclick="copyText('${c.email}', '${c.name} email')" class="text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1 font-medium" title="Copy Email">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Copy
+                        </button>
+                    </div>
+                    <div class="text-xs font-bold text-slate-900">${c.name}</div>
+                    <div class="text-[11px] text-slate-500 leading-snug mt-0.5">${c.issue}</div>
+                    <div class="text-[11px] font-mono text-slate-700 mt-1 truncate">${c.email}</div>
+                </div>
+            `).join('');
+
+            // 2. Full Contacts Tab List
+            const fullContacts = document.getElementById('contacts-full-list');
+            fullContacts.innerHTML = `
+                ${CONTACTS_ROUTING.map(c => `
+                    <div class="p-4 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider ${c.badgeColor}">${c.badge}</span>
+                                <span class="font-bold text-slate-900 text-sm">${c.name}</span>
+                            </div>
+                            <p class="text-xs text-slate-600 mt-1">${c.issue}</p>
+                            <p class="text-xs font-mono text-slate-700 mt-0.5">${c.email}${c.altEmail ? ` • ${c.altEmail}` : ''}</p>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button onclick="copyText('${c.email}', '${c.name} email')" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold flex items-center gap-1.5 transition">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Email
+                            </button>
+                            ${c.altEmail ? `
+                                <button onclick="copyText('${c.altEmail}', 'Karen Gray direct email')" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold flex items-center gap-1.5 transition">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Direct
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('')}
+                <div class="p-4 sm:px-5 bg-slate-50">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Full SNAP Project Team Roster</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        ${PROJECT_ROSTER.map(member => `
+                            <div class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between gap-2">
+                                <div class="min-w-0">
+                                    <div class="text-sm font-bold text-slate-900 truncate">${member.name}</div>
+                                    <div class="text-xs font-mono text-slate-500 truncate">${member.email}</div>
+                                </div>
+                                <button onclick="copyText('${member.email}', '${member.name} email')" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 shrink-0 transition" title="Copy Email">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            // 3. Portal Links (Sidebar + Full Tab)
+            renderPortalLinks();
+            lucide.createIcons();
+        }
+
+        function renderPortalLinks() {
+            const sidebarContainer = document.getElementById('sidebar-portal-links');
+            const fullContainer = document.getElementById('portal-links-full');
+
+            sidebarContainer.innerHTML = DEFAULT_PORTAL_LINKS.map(item => {
+                const savedUrl = state.portalUrls[item.id] || '';
+                if (savedUrl) {
+                    return `
+                        <a href="${savedUrl}" target="_blank" rel="noopener noreferrer"
+                            class="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/70 hover:bg-emerald-100/80 border border-emerald-200 text-emerald-950 transition group">
+                            <span class="text-xs font-bold truncate">${item.label}</span>
+                            <i data-lucide="external-link" class="w-3.5 h-3.5 text-emerald-700 shrink-0 group-hover:translate-x-0.5 transition-transform"></i>
+                        </a>
+                    `;
+                } else {
+                    return `
+                        <button onclick="switchTab('contacts')"
+                            class="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-dashed border-slate-300 text-slate-500 text-left transition">
+                            <span class="text-xs font-medium truncate">${item.label}</span>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 shrink-0">+ Paste URL</span>
+                        </button>
+                    `;
+                }
+            }).join('');
+
+            fullContainer.innerHTML = DEFAULT_PORTAL_LINKS.map(item => {
+                const savedUrl = state.portalUrls[item.id] || '';
+                return `
+                    <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-bold text-slate-900">${item.label}</div>
+                                <div class="text-[11px] text-slate-500">${item.hint}</div>
+                            </div>
+                            ${savedUrl ? `
+                                <a href="${savedUrl}" target="_blank" rel="noopener noreferrer"
+                                    class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 transition">
+                                    Open <i data-lucide="external-link" class="w-3 h-3"></i>
+                                </a>
+                            ` : ''}
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="url" value="${savedUrl}" placeholder="https://..."
+                                onchange="savePortalUrl('${item.id}', this.value)"
+                                class="flex-1 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-600">
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderTimeLogs() {
+            const tbody = document.getElementById('timelog-tbody');
+            const totalHours = state.timeLogs.reduce((sum, entry) => sum + Number(entry.hours || 0), 0);
+
+            document.getElementById('timelog-total-display').textContent = totalHours.toFixed(2);
+            document.getElementById('hours-badge').textContent = `${totalHours.toFixed(1)}h`;
+            document.getElementById('sidebar-hours-total').textContent = `${totalHours.toFixed(2)} hrs`;
+
+            if (state.timeLogs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-8 px-4 text-center text-slate-400 text-xs">
+                            No training hours logged yet. Add your Onboarding Meeting, Certification Videos, and Quiz hours above.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Sort by date ascending
+            const sorted = [...state.timeLogs].sort((a, b) => a.date.localeCompare(b.date));
+
+            tbody.innerHTML = sorted.map(entry => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-4 font-medium text-slate-900 whitespace-nowrap">${entry.date}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-800 text-xs font-semibold">${entry.activity}</span>
+                    </td>
+                    <td class="py-3 px-4 text-xs text-slate-600">${entry.notes || '—'}</td>
+                    <td class="py-3 px-4 text-right font-bold text-slate-900">${Number(entry.hours).toFixed(2)}</td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="deleteTimeEntry('${entry.id}')" class="text-slate-400 hover:text-rose-600 p-1 transition" title="Delete Entry">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // ==========================================
+        // INTERACTIVE ACTIONS
+        // ==========================================
+
+        function switchTab(tabName) {
+            state.activeTab = tabName;
+            saveState();
+
+            const tabs = ['all', 'pending', 'deadlines', 'timelog', 'contacts'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (btn) {
+                    btn.className = (t === tabName)
+                        ? 'tab-active pb-3 whitespace-nowrap flex items-center gap-1.5 transition'
+                        : 'tab-inactive pb-3 whitespace-nowrap flex items-center gap-1.5 transition';
+                }
+            });
+
+            document.getElementById('view-checklist').classList.toggle('hidden', !(tabName === 'all' || tabName === 'pending'));
+            document.getElementById('view-deadlines').classList.toggle('hidden', tabName !== 'deadlines');
+            document.getElementById('view-timelog').classList.toggle('hidden', tabName !== 'timelog');
+            document.getElementById('view-contacts').classList.toggle('hidden', tabName !== 'contacts');
+
+            if (tabName === 'all' || tabName === 'pending') {
+                renderChecklist();
+            }
+        }
+
+        function toggleTask(taskId) {
+            state.completedTasks[taskId] = !state.completedTasks[taskId];
+            saveState();
+            renderChecklist();
+        }
+
+        function setTodayAsOnboarding() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const formatted = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('onboarding-date').value = formatted;
+            state.onboardingDate = formatted;
+            saveState();
+            renderMilestones();
+            renderChecklist();
+            showToast('Onboarding Date set to Today');
+        }
+
+        function savePortalUrl(id, url) {
+            let cleanUrl = url.trim();
+            if (cleanUrl && !/^https?:\/\//i.test(cleanUrl)) {
+                cleanUrl = 'https://' + cleanUrl;
+            }
+            state.portalUrls[id] = cleanUrl;
+            saveState();
+            renderPortalLinks();
+            lucide.createIcons();
+            showToast(cleanUrl ? 'Portal link saved to launchpad' : 'Portal link cleared');
+        }
+
+        function addTimeEntry(e) {
+            e.preventDefault();
+            const date = document.getElementById('log-date').value;
+            const activity = document.getElementById('log-activity').value;
+            const hours = parseFloat(document.getElementById('log-hours').value);
+            const notes = document.getElementById('log-notes').value.trim();
+
+            if (!date || isNaN(hours) || hours <= 0) return;
+
+            state.timeLogs.push({
+                id: 'log-' + Date.now(),
+                date,
+                activity,
+                hours,
+                notes
+            });
+
+            saveState();
+            renderTimeLogs();
+            document.getElementById('log-hours').value = '';
+            document.getElementById('log-notes').value = '';
+            showToast(`Added ${hours.toFixed(2)} hrs for ${activity}`);
+        }
+
+        function deleteTimeEntry(id) {
+            state.timeLogs = state.timeLogs.filter(item => item.id !== id);
+            saveState();
+            renderTimeLogs();
+            showToast('Time entry removed');
+        }
+
+        function copyTimeLogSummary() {
+            if (state.timeLogs.length === 0) {
+                showToast('No hours logged yet to copy');
+                return;
+            }
+            const sorted = [...state.timeLogs].sort((a, b) => a.date.localeCompare(b.date));
+            const total = sorted.reduce((s, x) => s + Number(x.hours), 0);
+            const lines = [
+                'MSG SNAP Onboarding & Training Hours (For Unanet Entry):',
+                ...sorted.map(x => `• ${x.date} | ${x.activity}: ${Number(x.hours).toFixed(2)} hrs${x.notes ? ` (${x.notes})` : ''}`),
+                `Total Hours: ${total.toFixed(2)} hrs`
+            ];
+            copyText(lines.join('\n'), 'Unanet hours summary');
+        }
+
+        function copyText(text, label = 'Text') {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast(`${label} copied to clipboard`);
+            } catch (err) {
+                showToast('Unable to copy automatically');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2 transition-opacity duration-300';
+            toast.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        function confirmReset() {
+            const modal = document.getElementById('reset-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeResetModal() {
+            const modal = document.getElementById('reset-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function executeReset() {
+            localStorage.removeItem(STORAGE_KEY);
+            state = {
+                onboardingDate: '',
+                completedTasks: {},
+                timeLogs: [],
+                portalUrls: {},
+                activeTab: 'all'
+            };
+            document.getElementById('onboarding-date').value = '';
+            closeResetModal();
+            initApp();
+            showToast('All onboarding data has been reset');
+        }
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+
+        function initApp() {
+            loadState();
+
+            const dateInput = document.getElementById('onboarding-date');
+            if (state.onboardingDate) {
+                dateInput.value = state.onboardingDate;
+            }
+            dateInput.addEventListener('change', (e) => {
+                state.onboardingDate = e.target.value;
+                saveState();
+                renderMilestones();
+                renderChecklist();
+            });
+
+            // Default time log date input to today
+            const logDateInput = document.getElementById('log-date');
+            if (logDateInput && !logDateInput.value) {
+                const today = new Date();
+                logDateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            }
+
+            renderMilestones();
+            renderChecklist();
+            renderContactsAndLinks();
+            renderTimeLogs();
+            switchTab(state.activeTab || 'all');
+            lucide.createIcons();
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
